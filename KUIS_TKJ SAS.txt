@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuis Interaktif TKJ - Evaluasi Linux & Server</title>
+    <style>
+        :root {
+            --primary: #0f172a;
+            --accent: #0284c7;
+            --accent-hover: #0369a1;
+            --bg: #f0f4f8;
+            --card-bg: #ffffff;
+            --text: #334155;
+            --text-light: #64748b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --border: #cbd5e1;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 850px;
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+            padding: 30px;
+            border-top: 8px solid var(--accent);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            color: var(--text-light);
+            font-size: 0.95rem;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            margin-bottom: 30px;
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: var(--text-light);
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .progress-bar-outer {
+            background: #e2e8f0;
+            border-radius: 10px;
+            height: 12px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .progress-bar-inner {
+            background: linear-gradient(90deg, var(--accent), #38bdf8);
+            height: 100%;
+            width: 0%;
+            transition: width 0.4s ease;
+        }
+
+        /* Soal & Pilihan */
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        .question-block {
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px dashed #e2e8f0;
+        }
+
+        .question-text {
+            font-size: 1.05rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            line-height: 1.5;
+            color: var(--primary);
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        @media(min-width: 600px) {
+            .options-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .option-label {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.95rem;
+        }
+
+        .option-label:hover {
+            border-color: var(--accent);
+            background: #f0f9ff;
+        }
+
+        .option-label input {
+            margin-right: 12px;
+            transform: scale(1.2);
+            accent-color: var(--accent);
+        }
+
+        /* Feedback Status */
+        .feedback-message {
+            font-weight: 700;
+            font-size: 0.95rem;
+            margin-top: 8px;
+            display: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            width: fit-content;
+        }
+
+        .feedback-correct {
+            color: #065f46;
+            background-color: #d1fae5;
+            display: inline-block;
+        }
+
+        .feedback-wrong {
+            color: #991b1b;
+            background-color: #fee2e2;
+            display: inline-block;
+        }
+
+        /* State Warna Pilihan */
+        .option-label.correct-choice {
+            background-color: #d1fae5 !important;
+            border-color: var(--success) !important;
+            color: #065f46;
+        }
+
+        .option-label.wrong-choice {
+            background-color: #fee2e2 !important;
+            border-color: var(--danger) !important;
+            color: #991b1b;
+        }
+
+        .disabled-options {
+            pointer-events: none;
+            opacity: 0.85;
+        }
+
+        /* Navigasi */
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #e2e8f0;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-prev {
+            background: #e2e8f0;
+            color: var(--text);
+        }
+
+        .btn-prev:hover {
+            background: #cbd5e1;
+        }
+
+        .btn-next {
+            background: var(--accent);
+            color: white;
+            margin-left: auto;
+        }
+
+        .btn-next:hover {
+            background: var(--accent-hover);
+        }
+
+        /* Halaman Skor */
+        .result-screen {
+            text-align: center;
+            padding: 20px 0;
+            display: none;
+        }
+
+        .score-circle {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: #f0fdf4;
+            border: 5px solid var(--success);
+            color: var(--success);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin: 20px auto;
+        }
+
+        .score-num {
+            font-size: 3rem;
+            font-weight: 800;
+        }
+
+        .score-label {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-restart {
+            background: var(--primary);
+            color: white;
+            margin-top: 20px;
+        }
+
+        .btn-restart:hover {
+            background: #1e293b;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Ujian Praktik TKJ - Administrasi Sistem Jaringan</h1>
+        <p class="subtitle">Evaluasi Mandiri: Linux, Layanan Server & Control Panel Hosting</p>
+    </header>
+
+    <div class="progress-container" id="progressArea">
+        <div class="progress-info">
+            <span id="progressText">Halaman 1 dari 3</span>
+            <span id="percentText">0% Selesai</span>
+        </div>
+        <div class="progress-bar-outer">
+            <div class="progress-bar-inner" id="progressBar"></div>
+        </div>
+    </div>
+
+    <form id="quizForm">
+        <div id="quizPages"></div>
+
+        <div class="nav-buttons" id="navArea">
+            <button type="button" class="btn-prev" id="btnPrev" onclick="changePage(-1)" style="display:none;">Kembali</button>
+            <button type="button" class="btn-next" id="btnNext" onclick="changePage(1)">Berikutnya</button>
+        </div>
+    </form>
+
+    <div class="result-screen" id="resultArea">
+        <h2>Hasil Ujian Kompetensi</h2>
+        <p class="subtitle">Lembar penilaian otomatis administrasi jaringan</p>
+        <div class="score-circle">
+            <span class="score-num" id="finalScore">0</span>
+            <span class="score-label">Skor</span>
+        </div>
+        <p id="scoreMessage" style="font-weight: 600; margin-bottom: 20px;"></p>
+        <button type="button" class="btn-restart" onclick="restartQuiz()">Ulangi Ujian (Acak Soal Baru)</button>
+    </div>
+</div>
+
+<script>
+// Bank Soal Berdasarkan Kisi-Kisi TKJ (50 Soal Komplit)
+const rawQuestions = [
+    // 1. Sejarah & Penggunaan Linux
+    { q: "Siapakah nama mahasiswa yang menciptakan inti (kernel) Linux pertama kali pada tahun 1991?", a: "Bill Gates", b: "Linus Torvalds", c: "Steve Jobs", d: "William Morgan", ans: "B" },
+    { q: "Sistem operasi Linux bersifat 'Open Source', yang berarti...", a: "Kode sumbernya rahasia dan berbayar", b: "Kode sumbernya terbuka dan bebas dimodifikasi gratis", c: "Hanya bisa dibuka di browser Internet Explorer", d: "Sistem operasinya tidak memiliki sistem keamanan", ans: "B" },
+    { q: "Sistem operasi mobile terpopuler saat ini, Android, dibangun di atas inti (kernel) dari...", a: "Windows", b: "Linux", c: "Unix", d: "Mac OS", ans: "B" },
+    { q: "Linux berawal dari ketidakpuasan penciptanya terhadap sistem operasi pendidikan berbasis Unix bernama...", a: "MINIX", b: "MS-DOS", c: "Ubuntu", d: "RedHat", ans: "A" },
+    { q: "Mengapa Linux sangat mendominasi dan banyak digunakan pada komputer Server di dunia?", a: "Karena tampilannya sangat mirip Windows 11", b: "Karena sangat stabil, aman, dan hemat konsumsi resource perangkat keras", c: "Karena bisa menjalankan game kualitas tinggi tanpa VGA", d: "Karena dibuat langsung oleh perusahaan Microsoft", ans: "B" },
+    { q: "Di bawah ini yang bukan merupakan pemanfaatan sistem operasi Linux di lapangan adalah...", a: "Mengontrol perangkat IoT dan Router", b: "Menjalankan sistem database bank berskala besar", c: "Menjadi sistem operasi bawaan pabrik semua laptop Macbook", d: "Menyediakan layanan komputasi awan (Cloud Computing)", ans: "C" },
+    { q: "Layar hitam berbasis teks yang digunakan untuk mengetikkan perintah di dalam Linux dinamakan...", a: "GUI", b: "Explorer", c: "CLI (Command Line Interface)", d: "Desktop Environment", ans: "C" },
+    
+    // 2. Distro Linux
+    { q: "Apa yang dimaksud dengan 'Distro Linux'?", a: "Toko tempat membeli lisensi resmi produk Linux", b: "Sistem operasi utuh hasil modifikasi kernel Linux yang dibundel dengan software tertentu", c: "Aplikasi khusus pemutar video di server Linux", d: "Alat untuk membersihkan virus di sistem operasi Linux", ans: "B" },
+    { q: "Manakah di bawah ini yang merupakan sistem operasi turunan dari keluarga (varian) Debian?", a: "Fedora", b: "Ubuntu", c: "Rocky Linux", d: "Arch Linux", ans: "B" },
+    { q: "Distro Linux yang dirancang khusus dan dilengkapi ratusan tools untuk keperluan penetration testing (hacking & keamanan jaringan) adalah...", a: "Linux Mint", b: "Kali Linux", c: "CentOS", d: "Manjaro", ans: "B" },
+    { q: "Manakah paket pengelola aplikasi (Package Manager) yang digunakan secara standar oleh distro Ubuntu dan Debian?", a: "dnf", b: "apt", c: "yum", d: "pacman", ans: "B" },
+    { q: "Distro CentOS, Rocky Linux, dan AlmaLinux merupakan varian sistem operasi server yang berada di bawah naungan keluarga...", a: "Debian", b: "Red Hat (RHEL)", c: "Arch Linux", d: "Slackware", ans: "B" },
+    { q: "Perintah instalasi paket aplikasi 'sudo dnf install httpd' biasa ditemukan pada ekosistem distro Linux...", a: "Debian / Ubuntu", b: "Red Hat / Fedora / Rocky Linux", c: "Arch Linux", d: "Kali Linux", ans: "B" },
+    { q: "Distro Linux yang terkenal sangat minimalis dan ditujukan untuk pengguna tingkat lanjut yang ingin membangun sistem sendiri dari nol adalah...", a: "Linux Mint", b: "Arch Linux", c: "Ubuntu Desktop", d: "Windows Server", ans: "B" },
+
+    // 3. Perintah Dasar Linux
+    { q: "Perintah dasar Linux yang digunakan untuk mengetahui posisi direktori/folder aktif kita saat ini adalah...", a: "ls", b: "pwd", c: "cd", d: "touch", ans: "B" },
+    { q: "Bagaimana perintah yang benar untuk memindahkan posisi kita masuk ke dalam folder bernama '/var/www'?", a: "ls /var/www", b: "cd /var/www", c: "mkdir /var/www", d: "mv /var/www", ans: "B" },
+    { q: "Perintah dasar Linux yang berfungsi untuk membuat sebuah direktori atau folder baru adalah...", a: "touch", b: "mkdir", c: "rmdir", d: "nano", ans: "B" },
+    { q: "Jika Anda ingin membuat sebuah file teks kosong baru bernama 'data.txt', perintah yang digunakan adalah...", a: "mkdir data.txt", b: "touch data.txt", c: "rm data.txt", d: "cat data.txt", ans: "B" },
+    { q: "Untuk melihat daftar file dan folder yang berada di dalam direktori aktif, kita menggunakan perintah...", a: "cd", b: "ls", c: "pwd", d: "cp", ans: "B" },
+    { q: "Perintah dasar Linux yang berfungsi untuk menghapus sebuah file adalah...", a: "mv", b: "rm", c: "cp", d: "clear", ans: "B" },
+    { q: "Opsi tambahan yang wajib dimasukkan pada perintah 'rm' untuk menghapus sebuah folder beserta seluruh isinya secara rekursif adalah...", a: "-x", b: "-r", c: "-f", d: "-v", ans: "B" },
+    { q: "Perintah 'cp' dalam terminal Linux digunakan untuk keperluan...", a: "Mengubah nama file", b: "Menyalin (copy) file atau folder", c: "Memindahkan file", d: "Mencetak isi file", ans: "B" },
+    { q: "Perintah yang digunakan untuk memindahkan file ATAU mengubah nama (rename) suatu file adalah...", a: "cp", b: "mv", c: "rm", d: "chown", ans: "B" },
+    { q: "Perintah 'sudo' di depan instruksi terminal Linux berfungsi untuk...", a: "Mematikan komputer server", b: "Menjalankan perintah dengan hak akses Superuser / Administrator (Root)", c: "Membuat file konfigurasi cadangan otomatis", d: "Membatalkan perintah sebelumnya", ans: "B" },
+    { q: "Perintah 'chmod 755 file.sh' bertujuan untuk...", a: "Mengubah kepemilikan file menjadi milik user lain", b: "Mengubah hak akses (permission) membaca, menulis, dan mengeksekusi file", c: "Menghapus file secara permanen dari hardisk", d: "Mengompres ukuran file menjadi lebih kecil", ans: "B" },
+    { q: "Perintah CLI untuk melihat konfigurasi IP Address yang terpasang pada kartu jaringan Linux lama/baru berturut-turut adalah...", a: "ping atau traceroute", b: "ifconfig atau ip a", c: "netstat atau nslookup", d: "dhcp atau dns", ans: "B" },
+    { q: "Perintah 'ping' dikirimkan secara konstan di dalam jaringan dengan tujuan untuk...", a: "Mengunduh file konfigurasi web server", b: "Menguji konektivitas dan respons antar-perangkat di jaringan", c: "Mengubah IP address klien secara dinamis", d: "Mematikan server target dari jarak jauh", ans: "B" },
+
+    // 4. Fitur Layanan Server
+    { q: "Layanan server yang berfungsi membagikan IP Address secara otomatis kepada komputer klien dinamakan...", a: "DNS Server", b: "DHCP Server", c: "Web Server", d: "FTP Server", ans: "B" },
+    { q: "Layanan server yang bertugas menerjemahkan nama domain (seperti google.com) menjadi IP Address komputer disebut...", a: "Web Server", b: "DNS Server", c: "SSH Server", d: "Samba Server", ans: "B" },
+    { q: "Aplikasi legendaris yang sangat populer digunakan untuk membangun DNS Server pada distro Linux Debian adalah...", a: "Apache2", b: "BIND9", c: "vsftpd", d: "OpenSSH", ans: "B" },
+    { q: "Layanan server yang memproses permintaan HTTP/HTTPS dari web browser klien dinamakan...", a: "FTP Server", b: "Web Server", c: "DHCP Server", d: "SSH Server", ans: "B" },
+    { q: "Dua software aplikasi Web Server yang paling banyak menguasai pasar server dunia saat ini adalah...", a: "FileZilla dan Winbox", b: "Apache dan Nginx", c: "BIND9 dan Cisco", d: "MySQL dan Postgre", ans: "B" },
+    { q: "Protokol standar yang digunakan untuk keperluan unggah (upload) dan unduh (download) file di server adalah...", a: "SSH", b: "FTP", c: "HTTP", d: "DNS", ans: "B" },
+    { q: "Layanan remote access aman terenkripsi yang dipakai admin TKJ untuk mengendalikan server dari jarak jauh melalui port 22 bernama...", a: "Telnet", b: "SSH (Secure Shell)", c: "FTP", d: "DHCP", ans: "B" },
+    { q: "Manakah di bawah ini yang merupakan paket aplikasi populer untuk membuat layanan FTP Server di Linux?", a: "Apache2", b: "vsftpd / ProFTPD", c: "BIND9", d: "Samba", ans: "B" },
+
+    // 5. Control Panel Hosting
+    { q: "Apa fungsi utama dari pemasangan Control Panel Hosting di komputer server?", a: "Mempercepat performa internet klien", b: "Mempermudah pengelolaan website, database, dan server melalui antarmuka grafis (GUI) berbasis web", c: "Mengganti fungsi sistem operasi utama server", d: "Mencegah komputer server dari mati lampu mati mendadak", ans: "B" },
+    { q: "Fitur pada Control Panel Hosting yang digunakan untuk mengunggah, mengedit, dan mengekstrak file website lewat browser dinamakan...", a: "Database Manager", b: "File Manager", c: "DNS Zone Editor", d: "FTP Client", ans: "B" },
+    { q: "Untuk membuat alamat email khusus sekolah seperti 'admin@smk.sch.id', fitur control panel yang digunakan adalah...", a: "Subdomain Manager", b: "Email Account / Mail Server", c: "SSL Certificate", d: "Cron Job", ans: "B" },
+    { q: "Aplikasi web database yang terintegrasi di dalam control panel untuk mempermudah manajemen MySQL secara visual bernama...", a: "Nginx", b: "phpMyAdmin", c: "Let's Encrypt", d: "PuTTY", ans: "B" },
+    { q: "Manakah contoh control panel hosting berbayar (proprietary) yang menjadi standar industri web hosting saat ini?", a: "aaPanel", b: "cPanel", c: "CyberPanel", d: "VestaCP", ans: "B" },
+    { q: "Sertifikat keamanan gratis yang sering disediakan control panel untuk mengubah protokol website dari HTTP menjadi HTTPS adalah...", a: "SSH Key", b: "Let's Encrypt (SSL)", c: "Root Password", d: "Firewall Rule", ans: "B" },
+
+    // 6. Fitur aaPanel
+    { q: "aaPanel merupakan pilihan control panel hosting gratis yang digemari karena memiliki karakteristik...", a: "Sangat berat dan butuh spek dewa", b: "Sangat ringan, modern, dan menggunakan sistem modular (App Store)", c: "Hanya bisa diinstal di Windows Server", d: "Tidak memiliki sistem pengamanan firewall", ans: "B" },
+    { q: "Setelah sukses menginstal aaPanel, pengguna ditawarkan dua pilihan bundel web arsitektur utama, yaitu...", a: "Windows dan Mac OS", b: "LAMP dan LNMP", c: "FTP dan SSH", d: "Cisco dan Mikrotik", ans: "B" },
+    { q: "Komponen huruf 'N' pada singkatan arsitektur server 'LNMP' di aaPanel merujuk pada software web server...", a: "Node.js", b: "Nginx", c: "Network Apache", d: "Nvidia Server", ans: "B" },
+    { q: "Bagaimana cara admin menambahkan software tambahan (seperti versi PHP atau Mail Server) di dalam aaPanel?", a: "Mengetik perintah apt install manual di terminal", b: "Menginstalnya secara instan dengan satu klik melalui fitur App Store internal aaPanel", c: "Membeli lisensi eksternal dari Microsoft", d: "Mengunduh file exe dari google", ans: "B" },
+    { q: "Fitur aaPanel yang menyajikan grafik real-time mengenai penggunaan beban CPU, sisa RAM, dan kapasitas penyimpanan hardisk disebut...", a: "Security", b: "Monitor", c: "Cron", d: "Database", ans: "B" },
+    { q: "aaPanel menyertakan fitur 'Built-in Terminal' di dalam web panelnya dengan kegunaan untuk...", a: "Bermain game langsung di server", b: "Mengakses perintah CLI Linux langsung dari browser tanpa perlu aplikasi eksternal seperti PuTTY", c: "Melihat riwayat chat pengunjung website", d: "Membuat desain grafis halaman depan", ans: "B" },
+    { q: "Melalui menu 'Security' di aaPanel, tindakan pengamanan mendasar apa yang sangat disarankan untuk dilakukan admin jaringan?", a: "Menghapus seluruh file backup", b: "Mengubah port standar SSH (22) menjadi port acak lainnya guna menghindari brute force", c: "Mematikan fungsi enkripsi database", d: "Membuka seluruh port traffic luar tanpa filter", ans: "B" },
+    { q: "Apa kepanjangan dari arsitektur server 'LAMP' yang dapat diinstal satu kali klik di aaPanel?", a: "Linux, Android, MySQL, Python", b: "Linux, Apache, MySQL, PHP", c: "Local, Apache, Media, Protocol", d: "Linux, Nginx, MariaDB, Perl", ans: "B" },
+    { q: "Mengapa sistem modular di aaPanel dianggap menguntungkan bagi performa VPS server?", a: "Karena semua aplikasi dipaksa berjalan bersamaan", b: "Karena pengguna hanya menginstal layanan yang benar-benar dibutuhkan sehingga menghemat penggunaan RAM server", c: "Karena mempercepat koneksi Wi-Fi lingkungan sekolah", d: "Karena membuat tampilan website otomatis menjadi responsif", ans: "B" }
+];
+
+let questions = [];
+let currentPage = 0;
+const questionsPerPage = 20; // 20 soal per halaman
+const totalPages = 3;        // Halaman 1 (20), Halaman 2 (20), Halaman 3 (10) = Total 50 Soal
+let userScores = {}; 
+
+function shuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
+
+function initQuiz() {
+    questions = shuffle([...rawQuestions]);
+    currentPage = 0;
+    userScores = {}; 
+    renderPages();
+    showPage(0);
+    document.getElementById('quizForm').style.display = 'block';
+    document.getElementById('progressArea').style.display = 'block';
+    document.getElementById('resultArea').style.display = 'none';
+}
+
+function checkInstantAnswer(radioInput, globalIndex, chosenOpt, correctOpt) {
+    const block = document.getElementById(`block-${globalIndex}`);
+    const feedback = document.getElementById(`fb-${globalIndex}`);
+    const optionsGrid = block.querySelector('.options-grid');
+    
+    optionsGrid.classList.add('disabled-options');
+    
+    const labels = optionsGrid.querySelectorAll('.option-label');
+    
+    if (chosenOpt === correctOpt) {
+        feedback.innerText = "✅ Benar";
+        feedback.className = "feedback-message feedback-correct";
+        radioInput.parentElement.classList.add('correct-choice');
+        userScores[globalIndex] = 1; 
+    } else {
+        feedback.innerText = `❌ Salah (Jawaban Benar: ${correctOpt})`;
+        feedback.className = "feedback-message feedback-wrong";
+        radioInput.parentElement.classList.add('wrong-choice');
+        
+        labels.forEach(label => {
+            if (label.innerText.trim().startsWith(correctOpt)) {
+                label.classList.add('correct-choice');
+            }
+        });
+        userScores[globalIndex] = 0; 
+    }
+}
+
+function renderPages() {
+    const pagesContainer = document.getElementById('quizPages');
+    pagesContainer.innerHTML = '';
+
+    for (let p = 0; p < totalPages; p++) {
+        const pageDiv = document.createElement('div');
+        pageDiv.className = `page page-${p}`;
+        
+        const startIdx = p * questionsPerPage;
+        const endIdx = startIdx + questionsPerPage;
+        const pageQuestions = questions.slice(startIdx, endIdx);
+
+        pageQuestions.forEach((q, index) => {
+            const globalIndex = startIdx + index;
+            const qBlock = document.createElement('div');
+            qBlock.className = 'question-block';
+            qBlock.id = `block-${globalIndex}`;
+            qBlock.innerHTML = `
+                <div class="question-text">${globalIndex + 1}. ${q.q}</div>
+                <div class="options-grid">
+                    <label class="option-label"><input type="radio" name="q${globalIndex}" value="A" onclick="checkInstantAnswer(this, ${globalIndex}, 'A', '${q.ans}')"> A. ${q.a}</label>
+                    <label class="option-label"><input type="radio" name="q${globalIndex}" value="B" onclick="checkInstantAnswer(this, ${globalIndex}, 'B', '${q.ans}')"> B. ${q.b}</label>
+                    <label class="option-label"><input type="radio" name="q${globalIndex}" value="C" onclick="checkInstantAnswer(this, ${globalIndex}, 'C', '${q.ans}')"> C. ${q.c}</label>
+                    <label class="option-label"><input type="radio" name="q${globalIndex}" value="D" onclick="checkInstantAnswer(this, ${globalIndex}, 'D', '${q.ans}')"> D. ${q.d}</label>
+                </div>
+                <div class="feedback-message" id="fb-${globalIndex}"></div>
+            `;
+            pageDiv.appendChild(qBlock);
+        });
+
+        pagesContainer.appendChild(pageDiv);
+    }
+}
+
+function showPage(pageIndex) {
+    const pages = document.querySelectorAll('.page');
+    pages.forEach((p, idx) => {
+        p.classList.toggle('active', idx === pageIndex);
+    });
+
+    currentPage = pageIndex;
+    
+    document.getElementById('btnPrev').style.display = pageIndex === 0 ? 'none' : 'block';
+    if (pageIndex === totalPages - 1) {
+        document.getElementById('btnNext').innerText = 'Kirim Jawaban';
+    } else {
+        document.getElementById('btnNext').innerText = 'Berikutnya';
+    }
+
+    const progressPercent = Math.round((pageIndex / totalPages) * 100);
+    document.getElementById('progressBar').style.width = `${progressPercent}%`;
+    document.getElementById('progressText').innerText = `Halaman ${pageIndex + 1} dari ${totalPages}`;
+    document.getElementById('percentText').innerText = `${progressPercent}% Selesai`;
+    
+    window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+function changePage(direction) {
+    if (direction === 1 && currentPage === totalPages - 1) {
+        calculateScore();
+    } else {
+        const nextPage = currentPage + direction;
+        if (nextPage >= 0 && nextPage < totalPages) {
+            showPage(nextPage);
+        }
+    }
+}
+
+function calculateScore() {
+    let totalCorrect = 0;
+    let answeredQuestions = 0;
+    
+    for (let i = 0; i < questions.length; i++) {
+        if (userScores[i] !== undefined) {
+            answeredQuestions++;
+            if (userScores[i] === 1) {
+                totalCorrect++;
+            }
+        }
+    }
+
+    if(answeredQuestions < questions.length) {
+        const konfirmasi = confirm("Ada soal yang belum Anda klik/jawab. Apakah Anda yakin ingin mengirim dan mengakhiri ujian sekarang?");
+        if(!konfirmasi) return;
+    }
+
+    const finalScore = Math.round((totalCorrect / questions.length) * 100);
+    
+    document.getElementById('quizForm').style.display = 'none';
+    document.getElementById('progressArea').style.display = 'none';
+    
+    const resultArea = document.getElementById('resultArea');
+    resultArea.style.display = 'block';
+    
+    document.getElementById('finalScore').innerText = finalScore;
+    
+    let msg = "";
+    if (finalScore >= 85) msg = "Kompeten! Anda memiliki pemahaman sistem operasi dan server TKJ yang luar biasa.";
+    else if (finalScore >= 75) msg = "Bagus! Anda lulus standar kompetensi dasar sysadmin TKJ.";
+    else msg = "Nilai Anda di bawah KKM. Silakan pelajari kembali log koreksi instan di atas dan coba lagi.";
+    
+    document.getElementById('scoreMessage').innerText = msg;
+    window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+function restartQuiz() {
+    initQuiz();
+}
+
+window.onload = initQuiz;
+</script>
+</body>
+</html>
